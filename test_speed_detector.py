@@ -5,8 +5,9 @@ Test script for Speed Sign Detection AI
 
 import numpy as np
 import cv2
-from speed_detector import SpeedSignDetector
+import tempfile
 import os
+from speed_detector import SpeedSignDetector
 
 
 def create_test_image():
@@ -44,29 +45,43 @@ def test_basic_detection():
     
     # Create test image
     test_img = create_test_image()
-    test_path = "/tmp/test_speed_sign.jpg"
-    cv2.imwrite(test_path, test_img)
-    print(f"Created test image at {test_path}")
     
-    # Test detection
-    detector = SpeedSignDetector()
-    detections = detector.detect_speed_limit(test_path)
+    # Use cross-platform temporary file
+    with tempfile.NamedTemporaryFile(suffix='.jpg', delete=False) as tmp_file:
+        test_path = tmp_file.name
     
-    print(f"\nDetections: {len(detections)}")
-    for speed, (x, y, r) in detections:
-        print(f"  - Speed: {speed} km/h at position ({x}, {y}) with radius {r}")
-    
-    # Draw detections
-    output_path = "/tmp/test_output.jpg"
-    detector.draw_detections(test_path, output_path)
-    print(f"\nAnnotated output saved to {output_path}")
-    
-    if detections:
-        print("✓ Test PASSED: Speed sign detected")
-        return True
-    else:
-        print("✗ Test FAILED: No speed sign detected")
-        return False
+    try:
+        cv2.imwrite(test_path, test_img)
+        print(f"Created test image at {test_path}")
+        
+        # Test detection
+        detector = SpeedSignDetector()
+        detections = detector.detect_speed_limit(test_path)
+        
+        print(f"\nDetections: {len(detections)}")
+        for speed, (x, y, r) in detections:
+            print(f"  - Speed: {speed} km/h at position ({x}, {y}) with radius {r}")
+        
+        # Draw detections
+        with tempfile.NamedTemporaryFile(suffix='.jpg', delete=False) as out_file:
+            output_path = out_file.name
+        
+        detector.draw_detections(test_path, output_path)
+        print(f"\nAnnotated output saved to {output_path}")
+        
+        result = len(detections) > 0
+        if result:
+            print("✓ Test PASSED: Speed sign detected")
+        else:
+            print("✗ Test FAILED: No speed sign detected")
+        
+        return result
+    finally:
+        # Clean up temporary files
+        if os.path.exists(test_path):
+            os.unlink(test_path)
+        if 'output_path' in locals() and os.path.exists(output_path):
+            os.unlink(output_path)
 
 
 def test_preprocessing():

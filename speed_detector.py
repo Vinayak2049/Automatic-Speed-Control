@@ -16,6 +16,10 @@ class SpeedSignDetector:
     from images using computer vision and OCR techniques.
     """
     
+    # Configuration constants
+    MIN_SPEED_LIMIT = 10  # Minimum valid speed limit (km/h)
+    MAX_SPEED_LIMIT = 150  # Maximum valid speed limit (km/h)
+    
     def __init__(self):
         """Initialize the speed sign detector with default parameters."""
         self.speed_pattern = re.compile(r'\b(\d{2,3})\b')
@@ -147,7 +151,7 @@ class SpeedSignDetector:
                     
                     for match in matches:
                         speed = int(match)
-                        if 10 <= speed <= 150:  # Reasonable speed limit range
+                        if self.MIN_SPEED_LIMIT <= speed <= self.MAX_SPEED_LIMIT:
                             speed_candidates.append(speed)
                             
             except Exception:

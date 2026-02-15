@@ -4,6 +4,8 @@ This module processes video streams to detect speed limit signs in real-time.
 """
 
 import cv2
+import tempfile
+import os
 from speed_detector import SpeedSignDetector
 from typing import Optional
 
@@ -12,6 +14,9 @@ class VideoSpeedDetector:
     """
     Real-time speed limit sign detector for video streams.
     """
+    
+    # Configuration constants
+    FRAME_SKIP = 10  # Process every Nth frame for better performance
     
     def __init__(self):
         """Initialize the video speed detector."""
@@ -58,14 +63,16 @@ class VideoSpeedDetector:
             
             frame_count += 1
             
-            # Process every 10th frame to improve performance
-            if frame_count % 10 == 0:
-                # Save frame temporarily
-                temp_path = "/tmp/temp_frame.jpg"
-                cv2.imwrite(temp_path, frame)
+            # Process every FRAME_SKIP frames to improve performance
+            if frame_count % self.FRAME_SKIP == 0:
+                # Save frame temporarily using cross-platform temp file
+                with tempfile.NamedTemporaryFile(suffix='.jpg', delete=False) as tmp_file:
+                    temp_path = tmp_file.name
                 
-                # Detect speed signs
                 try:
+                    cv2.imwrite(temp_path, frame)
+                    
+                    # Detect speed signs
                     detections = self.detector.detect_speed_limit(temp_path)
                     
                     if detections:
@@ -77,6 +84,10 @@ class VideoSpeedDetector:
                                       cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
                 except Exception as e:
                     print(f"Error processing frame {frame_count}: {e}")
+                finally:
+                    # Clean up temporary file
+                    if os.path.exists(temp_path):
+                        os.unlink(temp_path)
             
             # Display current speed limit on frame
             if self.current_speed_limit:
