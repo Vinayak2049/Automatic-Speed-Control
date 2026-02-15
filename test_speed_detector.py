@@ -26,7 +26,7 @@ def create_test_image():
     cv2.circle(img, center, radius, (0, 0, 255), 8)
     
     # Add speed text "50"
-    font = cv2.FONT_HERSHEY_BOLD
+    font = cv2.FONT_HERSHEY_SIMPLEX
     text = "50"
     text_size = cv2.getTextSize(text, font, 3, 8)[0]
     text_x = center[0] - text_size[0] // 2

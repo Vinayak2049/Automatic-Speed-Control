@@ -36,7 +36,7 @@ def create_demo_images():
         cv2.circle(img, center, radius, (0, 0, 255), 12)
         
         # Add speed text
-        font = cv2.FONT_HERSHEY_BOLD
+        font = cv2.FONT_HERSHEY_SIMPLEX
         text_size = cv2.getTextSize(text, font, 2.5 if len(text) <= 2 else 2, 6)[0]
         text_x = center[0] - text_size[0] // 2
         text_y = center[1] + text_size[1] // 2
@@ -106,7 +106,7 @@ def demo_multiple_signs():
         cv2.circle(img, center, radius, (0, 0, 255), 10)
         
         # Add text
-        font = cv2.FONT_HERSHEY_BOLD
+        font = cv2.FONT_HERSHEY_SIMPLEX
         text_size = cv2.getTextSize(text, font, 2, 5)[0]
         text_x = center[0] - text_size[0] // 2
         text_y = center[1] + text_size[1] // 2

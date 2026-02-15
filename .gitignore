@@ -41,10 +41,14 @@ Thumbs.db
 *.tmp
 temp_frame.jpg
 
-# Output files
+# Output files (demo/test generated images)
 output_*.jpg
+output_*.png
 output_*.mp4
 test_output.jpg
+demo_*.jpg
+demo_*.png
+demo_result.png
 
 # Jupyter Notebooks
 .ipynb_checkpoints

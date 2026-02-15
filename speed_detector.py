@@ -116,29 +116,48 @@ class SpeedSignDetector:
         # Preprocess ROI for better OCR
         gray_roi = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY) if len(roi.shape) == 3 else roi
         
-        # Apply thresholding
-        _, thresh_roi = cv2.threshold(gray_roi, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+        # Try multiple preprocessing approaches
+        speed_candidates = []
         
-        # Enlarge for better OCR
-        enlarged = cv2.resize(thresh_roi, None, fx=2, fy=2, interpolation=cv2.INTER_CUBIC)
+        # Method 1: Simple thresholding
+        _, thresh_roi1 = cv2.threshold(gray_roi, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+        enlarged1 = cv2.resize(thresh_roi1, None, fx=3, fy=3, interpolation=cv2.INTER_CUBIC)
         
-        # Extract text using OCR
-        try:
-            text = pytesseract.image_to_string(
-                enlarged, 
-                config='--psm 7 -c tesseract_char_whitelist=0123456789'
-            )
-            
-            # Find speed limit values (typically 20-120)
-            matches = self.speed_pattern.findall(text)
-            
-            for match in matches:
-                speed = int(match)
-                if 10 <= speed <= 150:  # Reasonable speed limit range
-                    return speed
+        # Method 2: Inverted thresholding
+        _, thresh_roi2 = cv2.threshold(gray_roi, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+        enlarged2 = cv2.resize(thresh_roi2, None, fx=3, fy=3, interpolation=cv2.INTER_CUBIC)
+        
+        # Method 3: Adaptive thresholding
+        thresh_roi3 = cv2.adaptiveThreshold(gray_roi, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, 
+                                            cv2.THRESH_BINARY, 11, 2)
+        enlarged3 = cv2.resize(thresh_roi3, None, fx=3, fy=3, interpolation=cv2.INTER_CUBIC)
+        
+        # Try OCR on all methods
+        for enlarged in [enlarged1, enlarged2, enlarged3]:
+            try:
+                # Try different PSM modes
+                for psm in [7, 8, 10, 13]:
+                    text = pytesseract.image_to_string(
+                        enlarged, 
+                        config=f'--psm {psm} -c tesseract_char_whitelist=0123456789'
+                    )
                     
-        except Exception as e:
-            print(f"OCR error: {e}")
+                    # Find speed limit values (typically 20-150)
+                    matches = self.speed_pattern.findall(text)
+                    
+                    for match in matches:
+                        speed = int(match)
+                        if 10 <= speed <= 150:  # Reasonable speed limit range
+                            speed_candidates.append(speed)
+                            
+            except Exception:
+                continue
+        
+        # Return most common speed if found
+        if speed_candidates:
+            from collections import Counter
+            most_common = Counter(speed_candidates).most_common(1)[0][0]
+            return most_common
             
         return None
     
